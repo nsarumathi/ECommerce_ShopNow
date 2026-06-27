@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+       REACT_APP_API_BASE_URL: http://localhost:5000/api        
+    container_name: shopnow-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-service
+    restart: unless-stopped
+    networks:
+      - shopnow-network
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+       REACT_APP_API_BASE_URL: http://localhost:5000/api     
+    container_name: shopnow-admin
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend-service
+    restart: unless-stopped
+    networks:
+      - shopnow-network
+
+  backend-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: shopnow-backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017/shopnow
+    restart: unless-stopped
+    networks:
+      - shopnow-network
+
+  mongo:
+    image: mongo:7
+    container_name: shopnow-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: shopnow
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    networks:
+      - shopnow-network
+
+volumes:
+  mongo-data:
+
+networks:
+  shopnow-network:
+    driver: bridge
