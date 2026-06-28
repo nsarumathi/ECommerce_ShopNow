@@ -19,13 +19,6 @@ pipeline {
     }
 
     stages {
-
-        stage('Clone Source Code') {
-            steps {
-                git branch: 'main',
-                url: 'https://github.com/nsarumathi/ECommerce_ShopNow.git'
-            }
-        }
         // Docker Build
 
         stage('Docker Build') {
