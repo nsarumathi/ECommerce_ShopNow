@@ -8,7 +8,7 @@ pipeline {
         AWS_ACCOUNT_ID = '944765969321'
 
         // Terraform Directory
-        TF_DIR = 'ECommerce_ShopNow/terraform'
+        TF_DIR = 'terraform'
 
         // ECR Repositories
         FRONTEND_REPO = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/shopnow-frontend"
@@ -182,6 +182,9 @@ pipeline {
             echo '=========================================='
             echo 'Pipeline Failed'
             echo '=========================================='
+        }
+        always {
+            cleanWs()
         }
     }
 }
