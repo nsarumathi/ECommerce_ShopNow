@@ -73,9 +73,9 @@ pipeline {
         stage('Tag Docker Images') {
             steps {
                 sh '''
-                docker tag shopnow-frontend:latest $FRONTEND_REPO:$IMAGE_TAG
-                docker tag shopnow-admin:latest $ADMIN_REPO:$IMAGE_TAG
-                docker tag shopnow-backend:latest $BACKEND_REPO:$IMAGE_TAG
+                docker tag frontend:latest $FRONTEND_REPO:$IMAGE_TAG
+                docker tag admin:latest $ADMIN_REPO:$IMAGE_TAG
+                docker tag backend-service:latest $BACKEND_REPO:$IMAGE_TAG
                 '''
             }
         }
