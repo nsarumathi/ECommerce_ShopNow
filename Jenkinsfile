@@ -86,8 +86,21 @@ pipeline {
         
         stage('Terraform Init') {
             steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform init'
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    dir("${TF_DIR}") {
+                        sh '''
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                            export AWS_DEFAULT_REGION=$AWS_REGION
+        
+                            aws sts get-caller-identity
+        
+                            terraform init
+                        '''
+                    }
                 }
             }
         }
