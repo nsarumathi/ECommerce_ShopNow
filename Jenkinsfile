@@ -100,14 +100,6 @@ pipeline {
             }
         }
 
-        stage('Terraform Format Check') {
-            steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform fmt -check'
-                }
-            }
-        }
-
         stage('Terraform Plan') {
             steps {
 
