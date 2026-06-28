@@ -185,7 +185,7 @@ pipeline {
         }
 
         always {
-            cleanWs()
+            //cleanWs()
         }
     }
 }
