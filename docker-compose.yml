@@ -6,7 +6,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-       REACT_APP_API_BASE_URL: http://localhost:5000/api        
+       REACT_APP_API_BASE_URL: http://localhost:5000/api
+    image: shopnow-frontend:latest
     container_name: shopnow-frontend
     ports:
       - "3000:80"
@@ -22,6 +23,7 @@ services:
       dockerfile: Dockerfile
       args:
        REACT_APP_API_BASE_URL: http://localhost:5000/api     
+    image: shopnow-admin:latest
     container_name: shopnow-admin
     ports:
       - "3001:80"
@@ -35,6 +37,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: shopnow-backend:latest
     container_name: shopnow-backend
     ports:
       - "5000:5000"
