@@ -1,0 +1,112 @@
+---
+- name: Configure ShopNow EC2 Server
+  hosts: all
+  become: true
+
+  tasks:
+
+    # --------------------------------------------------
+    # 1. Update Ubuntu packages
+    # --------------------------------------------------
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    # --------------------------------------------------
+    # 2. Install basic required packages
+    # --------------------------------------------------
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - unzip
+          - software-properties-common
+        state: present
+
+    # --------------------------------------------------
+    # 3. Install Docker
+    # --------------------------------------------------
+    - name: Install Docker
+      apt:
+        name:
+          - docker.io
+        state: present
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    # --------------------------------------------------
+    # 4. Allow ubuntu user to run Docker without sudo
+    # --------------------------------------------------
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    # --------------------------------------------------
+    # 5. Install AWS CLI
+    # --------------------------------------------------
+    - name: Download AWS CLI
+      get_url:
+        url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /tmp/awscliv2.zip
+        mode: '0644'
+
+    - name: Unzip AWS CLI
+      unarchive:
+        src: /tmp/awscliv2.zip
+        dest: /tmp
+        remote_src: yes
+
+    - name: Install AWS CLI
+      command: /tmp/aws/install
+      args:
+        creates: /usr/local/bin/aws
+
+    # --------------------------------------------------
+    # 6. Install kubectl
+    # --------------------------------------------------
+    - name: Download kubectl
+      get_url:
+        url: https://dl.k8s.io/release/v1.34.1/bin/linux/amd64/kubectl
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+
+    # --------------------------------------------------
+    # 7. Verify installations
+    # --------------------------------------------------
+    - name: Check Docker version
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Display Docker version
+      debug:
+        msg: "{{ docker_version.stdout }}"
+
+    - name: Check AWS CLI version
+      command: aws --version
+      register: aws_version
+      changed_when: false
+
+    - name: Display AWS CLI version
+      debug:
+        msg: "{{ aws_version.stdout }}"
+
+    - name: Check kubectl version
+      command: kubectl version --client
+      register: kubectl_version
+      changed_when: false
+
+    - name: Display kubectl version
+      debug:
+        msg: "{{ kubectl_version.stdout }}"

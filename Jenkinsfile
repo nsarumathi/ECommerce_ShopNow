@@ -151,6 +151,31 @@ pipeline {
 
             }
         }
+        stage('Get Frontend IP') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    dir("${TF_DIR}") {
+                        script {
+                            env.FRONTEND_IP = sh(
+                                script: '''
+                                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                                    export AWS_DEFAULT_REGION=$AWS_REGION
+
+                                    terraform output -raw frontend_public_ip
+                                ''',
+                                returnStdout: true
+                            ).trim()
+
+                            echo "Frontend EC2 Public IP: ${env.FRONTEND_IP}"
+                        }
+                    }
+                }
+            }
+        }
 
         stage('Cleanup') {
             steps {
