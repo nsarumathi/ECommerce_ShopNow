@@ -189,7 +189,35 @@ pipeline {
                 }
             }
         }
+        stage('Generate Ansible Inventory') {
+            steps {
+                script {
+                    sh '''
+                        mkdir -p ansible
 
+                        cat > ansible/inventory.ini <<EOF
+        [frontend]
+        ${FRONTEND_IP} ansible_user=ubuntu
+        EOF
+
+                        echo "Generated Ansible inventory:"
+                        cat ansible/inventory.ini
+                    '''
+                }
+            }
+        }
+        stage('Ansible Configuration') {
+            steps {
+                sshagent(credentials: ['shopnow-ec2-key']) {
+                    sh '''
+                        ansible-playbook \
+                            -i ansible/inventory.ini \
+                            ansible/setup.yml \
+                            --ssh-common-args='-o StrictHostKeyChecking=no'
+                    '''
+                }
+            }
+        }
         stage('Cleanup') {
             steps {
                 sh '''

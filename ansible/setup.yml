@@ -1,6 +1,6 @@
 ---
 - name: Configure ShopNow EC2 Server
-  hosts: all
+  hosts: frontend
   become: true
 
   tasks:

@@ -15,7 +15,7 @@ variable "private_subnet" {
 }
 
 variable "instance_type" {
-  default = "t3.micro"
+  default = "t3.large"
 }
 
 variable "ami_id" {
