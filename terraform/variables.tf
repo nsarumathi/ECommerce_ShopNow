@@ -22,6 +22,12 @@ variable "ami_id" {
   default = "ami-0199ac7c9fbf9ed83" //ubuntu 26.04LTS
 }
 
+variable "key_name" {
+  description = "EC2 key pair name"
+  type        = string
+  default = "demo"
+}
+
 variable "public_subnet_2" {
   description = "CIDR block for the second public subnet"
   type        = string
