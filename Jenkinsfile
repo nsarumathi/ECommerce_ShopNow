@@ -10,6 +10,9 @@ pipeline {
         // Terraform Directory
         TF_DIR = 'terraform'
 
+        // Ansible Directory
+        ANSIBLE_DIR = 'ansible'
+
         // ECR Repositories
         FRONTEND_REPO = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/shopnow-frontend"
         ADMIN_REPO    = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/shopnow-admin"
@@ -189,19 +192,34 @@ pipeline {
                 }
             }
         }
+        // ANSIBLE
         stage('Generate Ansible Inventory') {
             steps {
-                script {
+                sh '''
+                    mkdir -p ${ANSIBLE_DIR}
+
+                    cat > ${ANSIBLE_DIR}/inventory.ini <<EOF
+[frontend]
+${FRONTEND_IP} ansible_user=ubuntu
+EOF
+
+                    echo "=========================================="
+                    echo "Generated Ansible Inventory"
+                    echo "=========================================="
+
+                    cat ${ANSIBLE_DIR}/inventory.ini
+                '''
+            }
+        }
+
+        stage('Test Ansible Connection') {
+            steps {
+                sshagent(credentials: ['shopnow-ec2-key']) {
                     sh '''
-                        mkdir -p ansible
-
-                        cat > ansible/inventory.ini <<EOF
-        [frontend]
-        ${FRONTEND_IP} ansible_user=ubuntu
-        EOF
-
-                        echo "Generated Ansible inventory:"
-                        cat ansible/inventory.ini
+                        ansible frontend \
+                            -i ${ANSIBLE_DIR}/inventory.ini \
+                            -m ping \
+                            --ssh-common-args='-o StrictHostKeyChecking=no'
                     '''
                 }
             }
@@ -211,8 +229,8 @@ pipeline {
                 sshagent(credentials: ['shopnow-ec2-key']) {
                     sh '''
                         ansible-playbook \
-                            -i ansible/inventory.ini \
-                            ansible/setup.yml \
+                            -i ${ANSIBLE_DIR}/inventory.ini \
+                            ${ANSIBLE_DIR}/setup.yml \
                             --ssh-common-args='-o StrictHostKeyChecking=no'
                     '''
                 }
@@ -230,8 +248,9 @@ pipeline {
     post {
         success {
             echo '=========================================='
-            echo 'Docker Images Successfully Pushed to AWS ECR'
+            echo 'Docker Images Successfully Pushed to ECR'
             echo 'Terraform Infrastructure Provisioned'
+            echo 'Ansible Configuration Completed'
             echo 'Pipeline Completed Successfully'
             echo '=========================================='
         }
