@@ -45,7 +45,7 @@ resource "aws_subnet" "private" {
 
   vpc_id = aws_vpc.shopnow.id
 
-  cidr_block = var.private_subnet_2
+  cidr_block = var.private_subnet
 
   availability_zone = var.availability_zone_1
 
@@ -59,7 +59,7 @@ resource "aws_subnet" "private_2" {
 
   vpc_id = aws_vpc.shopnow.id
 
-  cidr_block = var.private_subnet
+  cidr_block = var.private_subnet_2
 
   availability_zone = var.availability_zone_2
 
