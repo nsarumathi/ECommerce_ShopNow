@@ -45,9 +45,3 @@ variable "availability_zone_2" {
   type        = string
   default     = "ap-south-2b"
 }
-
-variable "availability_zone_2" {
-  description = "Secondary Availability Zone"
-  type        = string
-  default     = "ap-south-2b"
-}
