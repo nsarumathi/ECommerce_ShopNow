@@ -19,6 +19,9 @@ pipeline {
         BACKEND_REPO  = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/shopnow-backend"
 
         IMAGE_TAG = 'latest'
+        // KUBERNETES
+        EKS_CLUSTER_NAME = 'shopnow-eks'
+        K8S_DIR = 'k8s'
     }
 
     stages {
@@ -236,6 +239,208 @@ EOF
                 }
             }
         }
+         
+        // 10. CONFIGURE KUBECTL
+        stage('Configure kubectl for EKS') {
+            steps {
+
+                withCredentials([
+                    string(
+                        credentialsId: 'AWS_ACCESS_KEY',
+                        variable: 'AWS_ACCESS_KEY_ID'
+                    ),
+
+                    string(
+                        credentialsId: 'AWS_SECRET_KEY',
+                        variable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+
+                    sh '''
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=$AWS_REGION
+
+                        echo "Updating kubeconfig..."
+
+                        aws eks update-kubeconfig \
+                            --region $AWS_REGION \
+                            --name $EKS_CLUSTER_NAME
+
+                        echo "Checking Kubernetes cluster..."
+
+                        kubectl get nodes
+                    '''
+                }
+            }
+        }
+
+
+        // ==================================================
+        // 11. VERIFY EKS
+        // ==================================================
+
+        stage('Verify EKS Cluster') {
+
+            steps {
+
+                withCredentials([
+                    string(
+                        credentialsId: 'AWS_ACCESS_KEY',
+                        variable: 'AWS_ACCESS_KEY_ID'
+                    ),
+
+                    string(
+                        credentialsId: 'AWS_SECRET_KEY',
+                        variable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+
+                    sh '''
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=$AWS_REGION
+
+                        echo "EKS Cluster Status:"
+
+                        aws eks describe-cluster \
+                            --region $AWS_REGION \
+                            --name $EKS_CLUSTER_NAME \
+                            --query "cluster.status" \
+                            --output text
+
+                        echo "Kubernetes Nodes:"
+
+                        kubectl get nodes -o wide
+                    '''
+                }
+            }
+        }
+        // 12. DEPLOY FRONTEND
+        stage('Deploy Frontend to EKS') {
+
+            steps {
+
+                sh '''
+                    echo "Deploying ShopNow Frontend..."
+
+                    kubectl apply \
+                        -f $K8S_DIR/frontend-deployment.yaml
+
+                    kubectl apply \
+                        -f $K8S_DIR/frontend-service.yaml
+                '''
+            }
+        }
+        // 13. DEPLOY FRONTEND HPA
+        stage('Deploy Frontend HPA') {
+
+            steps {
+
+                sh '''
+                    echo "Deploying Frontend HPA..."
+
+                    kubectl apply \
+                        -f $K8S_DIR/frontend-hpa.yaml
+                '''
+            }
+        }
+        // 14. WAIT FOR FRONTEND ROLLOUT
+        stage('Wait for Frontend Deployment') {
+
+            steps {
+
+                sh '''
+                    echo "Waiting for frontend deployment..."
+
+                    kubectl rollout status \
+                        deployment/shopnow-frontend \
+                        --timeout=5m
+                '''
+            }
+        }
+        // 15. VERIFY FRONTEND PODS
+        stage('Verify Frontend Pods') {
+
+            steps {
+
+                sh '''
+                    echo "Frontend Pods:"
+
+                    kubectl get pods \
+                        -l app=shopnow-frontend \
+                        -o wide
+                '''
+            }
+        }
+
+        // 16. VERIFY FRONTEND SERVICE
+        stage('Verify Frontend Service') {
+
+            steps {
+
+                sh '''
+                    echo "Frontend Service:"
+
+                    kubectl get service shopnow-frontend-service
+                '''
+            }
+        }
+        // 17. VERIFY HPA
+        stage('Verify Frontend HPA') {
+
+            steps {
+
+                sh '''
+                    echo "Frontend HPA:"
+
+                    kubectl get hpa shopnow-frontend-hpa
+                '''
+            }
+        }
+        // 18. DISPLAY FINAL STATUS
+        stage('Kubernetes Deployment Status') {
+
+            steps {
+
+                sh '''
+                    echo "=========================================="
+                    echo "EKS CLUSTER"
+                    echo "=========================================="
+
+                    kubectl get nodes
+
+                    echo ""
+                    echo "=========================================="
+                    echo "FRONTEND DEPLOYMENT"
+                    echo "=========================================="
+
+                    kubectl get deployment shopnow-frontend
+
+                    echo ""
+                    echo "=========================================="
+                    echo "FRONTEND PODS"
+                    echo "=========================================="
+
+                    kubectl get pods \
+                        -l app=shopnow-frontend
+
+                    echo ""
+                    echo "=========================================="
+                    echo "FRONTEND SERVICE"
+                    echo "=========================================="
+
+                    kubectl get service shopnow-frontend-service
+
+                    echo ""
+                    echo "=========================================="
+                    echo "FRONTEND HPA"
+                    echo "=========================================="
+
+                    kubectl get hpa shopnow-frontend-hpa
+                '''
+            }
+        }
         stage('Cleanup') {
             steps {
                 sh '''
@@ -247,20 +452,50 @@ EOF
     }
 
     post {
+
         success {
-            echo '=========================================='
-            echo 'Docker Images Successfully Pushed to ECR'
-            echo 'Terraform Infrastructure Provisioned'
-            echo 'Ansible Configuration Completed'
-            echo 'Pipeline Completed Successfully'
-            echo '=========================================='
+
+            echo '''
+            ==========================================
+            SHOPNOW CI/CD PIPELINE SUCCESS
+            ==========================================
+
+            Docker Images:
+            Successfully built and pushed to ECR
+
+            Infrastructure:
+            Terraform provisioning completed
+            Ansible Configuration Completed
+
+            EKS:
+            Cluster configured successfully
+
+            Frontend:
+            Successfully deployed to Kubernetes
+
+            Service:
+            Kubernetes LoadBalancer created
+
+            HPA:
+            Frontend autoscaling configured
+
+            ==========================================
+            '''
         }
 
+
         failure {
-            echo '=========================================='
-            echo 'Pipeline Failed'
-            echo '=========================================='
+
+            echo '''
+            ==========================================
+            SHOPNOW PIPELINE FAILED
+            ==========================================
+
+            Please check the failed Jenkins stage
+            and review the console output.
+
+            ==========================================
+            '''
         }
     }
 }
-
