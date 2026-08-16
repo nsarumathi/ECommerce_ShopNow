@@ -22,8 +22,32 @@ variable "ami_id" {
   default = "ami-0199ac7c9fbf9ed83" //ubuntu 26.04LTS
 }
 
-variable "key_name" {
-  description = "EC2 key pair name"
+variable "public_subnet_2" {
+  description = "CIDR block for the second public subnet"
   type        = string
-  default = "demo"
+  default     = "10.0.3.0/24"
+}
+
+variable "private_subnet_2" {
+  description = "CIDR block for the second private subnet"
+  type        = string
+  default     = "10.0.4.0/24"
+}
+
+variable "availability_zone_1" {
+  description = "Primary Availability Zone"
+  type        = string
+  default     = "ap-south-2a"
+}
+
+variable "availability_zone_2" {
+  description = "Secondary Availability Zone"
+  type        = string
+  default     = "ap-south-2b"
+}
+
+variable "availability_zone_2" {
+  description = "Secondary Availability Zone"
+  type        = string
+  default     = "ap-south-2b"
 }

@@ -240,6 +240,7 @@ EOF
             steps {
                 sh '''
                 docker image prune -af
+                docker builder prune -af
                 '''
             }
         }
